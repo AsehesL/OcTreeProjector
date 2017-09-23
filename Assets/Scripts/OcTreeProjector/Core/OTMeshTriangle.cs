@@ -3,13 +3,19 @@ using System.Collections;
 
 namespace OcTreeProjector
 {
+    /// <summary>
+    /// 投影Mesh三角类
+    /// </summary>
     [System.Serializable]
-    internal class OTMeshTriangle
+    public class OTMeshTriangle
     {
         public Vector3 vertex0;
         public Vector3 vertex1;
         public Vector3 vertex2;
 
+        /// <summary>
+        /// 三角形的AABB包围盒
+        /// </summary>
         public Bounds bounds { get { return m_Bounds; } }
 
         [SerializeField] private Bounds m_Bounds;

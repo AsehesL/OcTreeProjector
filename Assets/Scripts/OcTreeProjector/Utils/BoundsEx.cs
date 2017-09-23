@@ -6,7 +6,13 @@ using System.Collections;
 /// </summary>
 public static class BoundsEx
 {
-
+    /// <summary>
+    /// 绘制Bounds
+    /// </summary>
+    /// <param name="bounds">包围盒</param>
+    /// <param name="H">H</param>
+    /// <param name="S">S</param>
+    /// <param name="V">V</param>
     public static void DrawBounds(this Bounds bounds, float H, float S, float V)
     {
         if (H > 1)
@@ -15,6 +21,11 @@ public static class BoundsEx
         DrawBounds(bounds, col);
     }
 
+    /// <summary>
+    /// 绘制Bounds
+    /// </summary>
+    /// <param name="bounds"></param>
+    /// <param name="color"></param>
     public static void DrawBounds(this Bounds bounds, Color color)
     {
         Gizmos.color = color;
@@ -45,6 +56,12 @@ public static class BoundsEx
         Gizmos.DrawLine(p4, p8);
     }
 
+    /// <summary>
+    /// 是否包含另一个Bounds
+    /// </summary>
+    /// <param name="bounds"></param>
+    /// <param name="compareTo"></param>
+    /// <returns></returns>
     public static bool IsBoundsContainsAnotherBounds(this Bounds bounds, Bounds compareTo)
     {
         if (!bounds.Contains(compareTo.center + new Vector3(-compareTo.size.x / 2, compareTo.size.y / 2, -compareTo.size.z / 2)))

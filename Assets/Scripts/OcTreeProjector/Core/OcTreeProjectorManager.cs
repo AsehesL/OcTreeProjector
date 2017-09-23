@@ -24,5 +24,22 @@ namespace OcTreeProjector
         }
 
         private static OcTreeProjectorManager instance;
+
+        public MeshOcTree OctTree { get { return m_OctTree; } }
+
+        private MeshOcTree m_OctTree;
+
+        void Awake()
+        {
+            m_OctTree = Resources.Load<MeshOcTree>("tree");
+        }
+
+        void OnDrawGizmosSelected()
+        {
+            if (m_OctTree != null)
+            {
+                m_OctTree.DrawTree(0, 0.1f);
+            }
+        }
     }
 }
