@@ -1,219 +1,151 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Threading;
-using UnityEngine;
+﻿using UnityEngine;
+using System.Collections;
 using OcTreeProjector;
 
-/// <summary>
-/// 八叉树投影器
-/// </summary>
 public class OTProjector : MonoBehaviour
 {
-
-    public float size;
-    public float near;
-    public float far;
-    public float aspect;
-
+    public float near = 0.1f;
+    public float far = 100;
+    public float fieldOfView = 60;
+    public float aspect = 1;
+    public bool orthographic = false;
+    public float orthographicSize = 10;
     public Material material;
 
-    private Bounds m_Bounds;
+    public MeshOcTree ocTree;
+
+    private OTMesh m_MeshCache;
 
     private Vector3 m_Position;
     private Quaternion m_Rotation;
-    private float m_Size;
+    private float m_OrthographicSize;
     private float m_Near;
     private float m_Far;
     private float m_Aspect;
-
-    private Mesh m_Mesh;
-
-    private OTMesh m_MeshCache = new OTMesh();
-
-    private MeshOcTreeTriggerHandle m_TriangleHandle;
-
-    private Thread m_Thread;
-
-    private bool m_RefreshCache;
-    private bool m_RebuildMesh;
+    private bool m_Orthographic;
+    private float m_FieldOfView;
 
     void Start()
     {
-        m_TriangleHandle = new MeshOcTreeTriggerHandle(SearchTriangle);
-        m_Thread = new Thread(RefreshCache);
-        m_Thread.Start();
-    }
-
-    void OnDestroy()
-    {
-        m_Thread.Abort();
+        if (ocTree == null)
+            return;
+        m_MeshCache = OcTreeProjectorManager.RegisterMesh(ocTree);
     }
 
     void OnRenderObject()
     {
-        if (material != null && m_Mesh != null)
+        if (m_MeshCache == null)
+            return;
+        bool render = Camera.current == Camera.main;
+#if UNITY_EDITOR
+        render = render || (UnityEditor.SceneView.currentDrawingSceneView != null &&
+                            Camera.current == UnityEditor.SceneView.currentDrawingSceneView.camera);
+#endif
+        if (render)
         {
-            material.SetPass(0);
-            material.SetMatrix("internal_Projector", GetProjectorMatrix());
-            Graphics.DrawMeshNow(m_Mesh, Matrix4x4.identity);
-        }
-    }
-
-    void RefreshCache()
-    {
-        while (true)
-        {
-            if (m_RefreshCache)
+            if (material != null)
             {
-                m_RefreshCache = false;
-
                 lock (m_MeshCache)
                 {
-                    m_MeshCache.vertexCache.Clear();
-                    m_MeshCache.indexesCache.Clear();
-
-                    m_MeshCache.currentIndex = 0;
-
-                    OcTreeProjectorManager.Instance.OctTree.Trigger(m_Bounds, m_TriangleHandle);
+                    m_MeshCache.Render(material);
                 }
-
-                m_RebuildMesh = true;
             }
-            Thread.Sleep(10);
         }
     }
 
     void Update()
     {
-        if (OcTreeProjectorManager.Instance == null)
+        if (m_MeshCache == null)
             return;
-        if (m_Position != transform.position || m_Rotation != transform.rotation || m_Size != size || m_Near != near ||
-            m_Far != far || m_Aspect != aspect)
+        bool rebuildBounds = false;
+        if (m_Orthographic != orthographic)
         {
-            BuildBounds();
-
-            m_RefreshCache = true;
+            m_Orthographic = orthographic;
+            rebuildBounds = true;
         }
-
-        if (m_RebuildMesh)
+        if (!rebuildBounds)
         {
-            m_RebuildMesh = false;
+            if (m_Position != transform.position || m_Rotation != transform.rotation ||
+                     m_Near != near ||
+                     m_Far != far || m_Aspect != aspect)
+            {
+                m_Position = transform.position;
+                m_Rotation = transform.rotation;
+                m_Near = near;
+                m_Far = far;
+                m_Aspect = aspect;
+                rebuildBounds = true;
+            }
+        }
+        if (!rebuildBounds)
+        {
+            if (orthographic)
+            {
+                if (m_OrthographicSize != orthographicSize)
+                {
+                    m_OrthographicSize = orthographicSize;
+                    rebuildBounds = true;
+                }
+            }
+            else
+            {
+                if (m_FieldOfView != fieldOfView)
+                {
+                    m_FieldOfView = fieldOfView;
+                    rebuildBounds = true;
+                }
+            }
+        }
+        if (rebuildBounds)
+        {
+            Matrix4x4 mtx = default(Matrix4x4);
+            if (orthographic)
+            {
+                mtx = Matrix4x4.Ortho(-orthographicSize * aspect, orthographicSize * aspect, orthographicSize, -orthographicSize,
+                    -near, -far);
+            }
+            else
+            {
+                mtx = Matrix4x4.Perspective(fieldOfView, aspect, -near, -far);
+            }
+            mtx = mtx * transform.worldToLocalMatrix;
             lock (m_MeshCache)
             {
-                if (m_Mesh == null)
-                    m_Mesh = new Mesh();
-                m_Mesh.Clear();
-                m_Mesh.SetVertices(m_MeshCache.vertexCache);
-                m_Mesh.SetTriangles(m_MeshCache.indexesCache, 0);
+                m_MeshCache.RefreshMatrix(mtx);
             }
         }
     }
 
-    void SearchTriangle(OTMeshTriangle triangle)
+
+    void OnDrawGizmos()
     {
-        m_MeshCache.vertexCache.Add(triangle.vertex0);
-        m_MeshCache.indexesCache.Add(0 + m_MeshCache.currentIndex * 3);
-
-        m_MeshCache.vertexCache.Add(triangle.vertex1);
-        m_MeshCache.indexesCache.Add(1 + m_MeshCache.currentIndex * 3);
-
-        m_MeshCache.vertexCache.Add(triangle.vertex2);
-        m_MeshCache.indexesCache.Add(2 + m_MeshCache.currentIndex * 3);
-
-        m_MeshCache.currentIndex += 1;
-    }
-
-    void BuildBounds()
-    {
-        m_Aspect = aspect;
-        m_Near = near;
-        m_Far = far;
-        m_Size = size;
-        m_Position = transform.position;
-        m_Rotation = transform.rotation;
-
-        Vector3 p1 = m_Position + m_Rotation * new Vector3(-m_Size * m_Aspect, -m_Size, m_Near);
-        Vector3 p2 = m_Position + m_Rotation * new Vector3(m_Size * m_Aspect, -m_Size, m_Near);
-        Vector3 p3 = m_Position + m_Rotation * new Vector3(m_Size * m_Aspect, m_Size, m_Near);
-        Vector3 p4 = m_Position + m_Rotation * new Vector3(-m_Size * m_Aspect, m_Size, m_Near);
-        Vector3 p5 = m_Position + m_Rotation * new Vector3(-m_Size * m_Aspect, -m_Size, m_Far);
-        Vector3 p6 = m_Position + m_Rotation * new Vector3(m_Size * m_Aspect, -m_Size, m_Far);
-        Vector3 p7 = m_Position + m_Rotation * new Vector3(m_Size * m_Aspect, m_Size, m_Far);
-        Vector3 p8 = m_Position + m_Rotation * new Vector3(-m_Size * m_Aspect, m_Size, m_Far);
-
-        Vector3 min = GetMinVector(p1, p2);
-        min = GetMinVector(min, p3);
-        min = GetMinVector(min, p4);
-        min = GetMinVector(min, p5);
-        min = GetMinVector(min, p6);
-        min = GetMinVector(min, p7);
-        min = GetMinVector(min, p8);
-        Vector3 max = GetMaxVector(p1, p2);
-        max = GetMaxVector(max, p3);
-        max = GetMaxVector(max, p4);
-        max = GetMaxVector(max, p5);
-        max = GetMaxVector(max, p6);
-        max = GetMaxVector(max, p7);
-        max = GetMaxVector(max, p8);
-
-        Vector3 si = max - min;
-        Vector3 ct = min + si / 2;
-
-        m_Bounds = new Bounds(ct, si);
-    }
-
-    private Vector3 GetMaxVector(Vector3 v1, Vector3 v2)
-    {
-        Vector3 p = v1;
-        if (v2.x > p.x)
-            p.x = v2.x;
-        if (v2.y > p.y)
-            p.y = v2.y;
-        if (v2.z > p.z)
-            p.z = v2.z;
-        return p;
-    }
-
-    private Vector3 GetMinVector(Vector3 v1, Vector3 v2)
-    {
-        Vector3 p = v1;
-        if (v2.x < p.x)
-            p.x = v2.x;
-        if (v2.y < p.y)
-            p.y = v2.y;
-        if (v2.z < p.z)
-            p.z = v2.z;
-        return p;
-    }
-
-    private Matrix4x4 GetProjectorMatrix()
-    {
-        Matrix4x4 mat = transform.worldToLocalMatrix;
-
-        Matrix4x4 pj = new Matrix4x4();
-        pj.m00 = 0.5f / (size * aspect);
-        pj.m03 = 0.5f;
-        pj.m11 = 0.5f / size;
-        pj.m13 = 0.5f;
-        pj.m22 = 2 / (far - near);
-        pj.m23 = -2 * near / (far - near) - 1;
-        pj.m33 = 1;
-
-        return pj * mat;
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        m_Bounds.DrawBounds(Color.black);
-        Quaternion rot = transform.rotation;
-        Vector3 p1 = transform.position + rot * new Vector3(-size * aspect, -size, near);
-        Vector3 p2 = transform.position + rot * new Vector3(size * aspect, -size, near);
-        Vector3 p3 = transform.position + rot * new Vector3(size * aspect, size, near);
-        Vector3 p4 = transform.position + rot * new Vector3(-size * aspect, size, near);
-        Vector3 p5 = transform.position + rot * new Vector3(-size * aspect, -size, far);
-        Vector3 p6 = transform.position + rot * new Vector3(size * aspect, -size, far);
-        Vector3 p7 = transform.position + rot * new Vector3(size * aspect, size, far);
-        Vector3 p8 = transform.position + rot * new Vector3(-size * aspect, size, far);
+        Matrix4x4 mtx = default(Matrix4x4);
+        if (orthographic)
+        {
+            mtx = Matrix4x4.Ortho(-orthographicSize*aspect, orthographicSize*aspect, orthographicSize, -orthographicSize,
+                -near, -far).inverse;
+        }
+        else
+        {
+            mtx = Matrix4x4.Perspective(fieldOfView, aspect, -near, -far).inverse;
+        }
+        mtx = transform.localToWorldMatrix * mtx;
+        Vector3 p1 = new Vector3(-1, -1, -1);
+        Vector3 p2 = new Vector3(-1, 1, -1);
+        Vector3 p3 = new Vector3(1, 1, -1);
+        Vector3 p4 = new Vector3(1, -1, -1);
+        Vector3 p5 = new Vector3(-1, -1, 1);
+        Vector3 p6 = new Vector3(-1, 1, 1);
+        Vector3 p7 = new Vector3(1, 1, 1);
+        Vector3 p8 = new Vector3(1, -1, 1);
+        p1 = mtx.MultiplyPoint(p1);
+        p2 = mtx.MultiplyPoint(p2);
+        p3 = mtx.MultiplyPoint(p3);
+        p4 = mtx.MultiplyPoint(p4);
+        p5 = mtx.MultiplyPoint(p5);
+        p6 = mtx.MultiplyPoint(p6);
+        p7 = mtx.MultiplyPoint(p7);
+        p8 = mtx.MultiplyPoint(p8);
 
         Gizmos.color = new Color(0.8f, 0.8f, 0.8f, 0.6f);
 
