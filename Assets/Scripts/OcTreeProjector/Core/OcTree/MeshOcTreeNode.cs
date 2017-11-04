@@ -80,14 +80,14 @@ namespace OcTreeProjector
             return false;
         }
 
-        public void Trigger(Bounds bd, List<MeshOcTreeNode> nodeList, MeshOcTreeTriggerHandle handle)
+        public void Trigger(Bounds bd, OTMesh mesh, List<MeshOcTreeNode> nodeList, MeshOcTreeTriggerHandle handle)
         {
             if (handle == null)
                 return;
             for (int i = 0; i < m_ChildNodes.Length; i++)
             {
                 if (m_ChildNodes[i] > 0)
-                    nodeList[m_ChildNodes[i]].Trigger(bd, nodeList, handle);
+                    nodeList[m_ChildNodes[i]].Trigger(bd, mesh, nodeList, handle);
             }
 
             if (this.bounds.Intersects(bd))
@@ -95,7 +95,7 @@ namespace OcTreeProjector
                 for (int i = 0; i < m_ItemList.Count; i++)
                 {
                     if (m_ItemList[i].Intersects(bd))
-                        handle(m_ItemList[i]);
+                        handle(mesh, m_ItemList[i]);
                 }
             }
         }

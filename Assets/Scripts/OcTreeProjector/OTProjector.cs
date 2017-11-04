@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Threading;
 using System.Collections;
 using OcTreeProjector;
 
@@ -12,9 +13,7 @@ public class OTProjector : MonoBehaviour
     public float orthographicSize = 10;
     public Material material;
 
-    public MeshOcTree ocTree;
-
-    private OTMesh m_MeshCache;
+    public string ocTreeName;
 
     private Vector3 m_Position;
     private Quaternion m_Rotation;
@@ -25,143 +24,190 @@ public class OTProjector : MonoBehaviour
     private bool m_Orthographic;
     private float m_FieldOfView;
 
+    private string m_OcTreeName;
+
+    private bool m_IsInitialized;
+
+    private MeshOcTree m_OcTree;
+
+    private Bounds m_Bounds;
+
+    private MeshOcTreeTriggerHandle m_Handle;
+
+    private MeshRenderer m_MeshRenderer;
+    private MeshFilter m_MeshFilter;
+
+    private OTMesh m_Mesh;
+
+    private WaitCallback m_BuildMeshCallBack;
+
     void Start()
     {
-        if (ocTree == null)
+        if (string.IsNullOrEmpty(ocTreeName))
+        {
             return;
-        m_MeshCache = OcTreeProjectorManager.RegisterMesh(ocTree);
+        }
+        m_OcTree = Resources.Load<MeshOcTree>(ocTreeName);
+        if (m_OcTree == null)
+            return;
+        m_OcTreeName = ocTreeName;
+
+        m_Handle = OcTreeTriggerHandle;
+        m_BuildMeshCallBack = BuildProjectorMesh;
+
+        m_MeshRenderer = new GameObject("MR").AddComponent<MeshRenderer>();
+        m_MeshFilter = m_MeshRenderer.gameObject.AddComponent<MeshFilter>();
+        //m_MeshRenderer.transform.SetParent(transform);
+        m_MeshRenderer.transform.position = Vector3.zero;
+        m_MeshRenderer.transform.rotation = Quaternion.identity;
+        m_MeshRenderer.sharedMaterial = material;
+
+        m_Mesh = new OTMesh();
+        m_MeshFilter.sharedMesh = m_Mesh.mesh;
+
+        m_IsInitialized = true;
     }
 
-    void OnRenderObject()
+    void OnDestroy()
     {
-        if (m_MeshCache == null)
+        if (m_MeshFilter)
+            Destroy(m_MeshFilter.gameObject);
+    }
+
+    void OnDisable()
+    {
+        if (m_MeshFilter)
+            m_MeshFilter.gameObject.SetActive(false);
+    }
+
+    void OnEnable()
+    {
+        if (m_MeshFilter)
+            m_MeshFilter.gameObject.SetActive(true);
+    }
+
+    void LateUpdate()
+    {
+        if (!m_IsInitialized)
             return;
-        bool render = Camera.current == Camera.main;
-#if UNITY_EDITOR
-        render = render || (UnityEditor.SceneView.currentDrawingSceneView != null &&
-                            Camera.current == UnityEditor.SceneView.currentDrawingSceneView.camera);
-#endif
-        if (render)
         {
-            if (material != null)
+            if (m_Mesh.BuildMesh())
             {
-                lock (m_MeshCache)
-                {
-                    m_MeshCache.Render(material);
-                }
+                //m_MeshFilter.sharedMesh = m_Mesh.mesh;
             }
         }
-    }
+        bool rebuildMesh = false;
 
-    void Update()
-    {
-        if (m_MeshCache == null)
-            return;
-        bool rebuildBounds = false;
+        if (m_OcTreeName != ocTreeName)
+        {
+            m_OcTreeName = ocTreeName;
+            ReLoadOcTree();
+            rebuildMesh = true;
+        }
         if (m_Orthographic != orthographic)
         {
             m_Orthographic = orthographic;
-            rebuildBounds = true;
-        }
-        if (!rebuildBounds)
-        {
-            if (m_Position != transform.position || m_Rotation != transform.rotation ||
-                     m_Near != near ||
-                     m_Far != far || m_Aspect != aspect)
-            {
-                m_Position = transform.position;
-                m_Rotation = transform.rotation;
-                m_Near = near;
-                m_Far = far;
-                m_Aspect = aspect;
-                rebuildBounds = true;
-            }
-        }
-        if (!rebuildBounds)
-        {
-            if (orthographic)
-            {
-                if (m_OrthographicSize != orthographicSize)
-                {
-                    m_OrthographicSize = orthographicSize;
-                    rebuildBounds = true;
-                }
-            }
-            else
-            {
-                if (m_FieldOfView != fieldOfView)
-                {
-                    m_FieldOfView = fieldOfView;
-                    rebuildBounds = true;
-                }
-            }
-        }
-        if (rebuildBounds)
-        {
-            Matrix4x4 mtx = default(Matrix4x4);
-            if (orthographic)
-            {
-                mtx = Matrix4x4.Ortho(-orthographicSize * aspect, orthographicSize * aspect, orthographicSize, -orthographicSize,
-                    -near, -far);
-            }
-            else
-            {
-                mtx = Matrix4x4.Perspective(fieldOfView, aspect, -near, -far);
-            }
-            mtx = mtx * transform.worldToLocalMatrix;
-            lock (m_MeshCache)
-            {
-                m_MeshCache.RefreshMatrix(mtx);
-            }
-        }
-    }
-
-
-    void OnDrawGizmos()
-    {
-        Matrix4x4 mtx = default(Matrix4x4);
-        if (orthographic)
-        {
-            mtx = Matrix4x4.Ortho(-orthographicSize*aspect, orthographicSize*aspect, orthographicSize, -orthographicSize,
-                -near, -far).inverse;
+            ReBuildBounds();
+            rebuildMesh = true;
         }
         else
         {
-            mtx = Matrix4x4.Perspective(fieldOfView, aspect, -near, -far).inverse;
+            if (m_Orthographic && (m_Position != transform.position||m_Rotation != transform.rotation || m_OrthographicSize != orthographicSize || m_Near != near ||
+                 m_Far != far || m_Aspect != aspect))
+            {
+                ReBuildBounds();
+                rebuildMesh = true;
+            }else if (!m_Orthographic && (m_Position != transform.position||m_Rotation != transform.rotation || m_FieldOfView != fieldOfView || m_Near != near ||
+                       m_Far != far || m_Aspect != aspect))
+            {
+                ReBuildBounds();
+                rebuildMesh = true;
+            }
         }
-        mtx = transform.localToWorldMatrix * mtx;
-        Vector3 p1 = new Vector3(-1, -1, -1);
-        Vector3 p2 = new Vector3(-1, 1, -1);
-        Vector3 p3 = new Vector3(1, 1, -1);
-        Vector3 p4 = new Vector3(1, -1, -1);
-        Vector3 p5 = new Vector3(-1, -1, 1);
-        Vector3 p6 = new Vector3(-1, 1, 1);
-        Vector3 p7 = new Vector3(1, 1, 1);
-        Vector3 p8 = new Vector3(1, -1, 1);
-        p1 = mtx.MultiplyPoint(p1);
-        p2 = mtx.MultiplyPoint(p2);
-        p3 = mtx.MultiplyPoint(p3);
-        p4 = mtx.MultiplyPoint(p4);
-        p5 = mtx.MultiplyPoint(p5);
-        p6 = mtx.MultiplyPoint(p6);
-        p7 = mtx.MultiplyPoint(p7);
-        p8 = mtx.MultiplyPoint(p8);
+        if (rebuildMesh)
+        {
+            //lock (m_Mesh)
+            {
+                m_Mesh.worldToLocal = m_MeshRenderer.transform.worldToLocalMatrix;
+            }
+            ThreadPool.QueueUserWorkItem(m_BuildMeshCallBack, m_Mesh);
+            //m_OcTree.Trigger(m_Bounds, )
+        }
+        //lock (m_Mesh)
+        
+    }
 
-        Gizmos.color = new Color(0.8f, 0.8f, 0.8f, 0.6f);
+    void ReLoadOcTree()
+    {
+        
+    }
 
-        Gizmos.DrawLine(p1, p2);
-        Gizmos.DrawLine(p2, p3);
-        Gizmos.DrawLine(p3, p4);
-        Gizmos.DrawLine(p4, p1);
+    void ReBuildBounds()
+    {
+        m_Aspect = aspect;
+        m_Near = near;
+        m_Far = far;
+        m_OrthographicSize = orthographicSize;
+        m_Rotation = transform.rotation;
+        m_Position = transform.position;
 
-        Gizmos.DrawLine(p5, p6);
-        Gizmos.DrawLine(p6, p7);
-        Gizmos.DrawLine(p7, p8);
-        Gizmos.DrawLine(p8, p5);
+        Vector3 p1 = m_Position + m_Rotation * new Vector3(-m_OrthographicSize * m_Aspect, -m_OrthographicSize, m_Near);
+        Vector3 p2 = m_Position + m_Rotation * new Vector3(m_OrthographicSize * m_Aspect, -m_OrthographicSize, m_Near);
+        Vector3 p3 = m_Position + m_Rotation * new Vector3(m_OrthographicSize * m_Aspect, m_OrthographicSize, m_Near);
+        Vector3 p4 = m_Position + m_Rotation * new Vector3(-m_OrthographicSize * m_Aspect, m_OrthographicSize, m_Near);
+        Vector3 p5 = m_Position + m_Rotation * new Vector3(-m_OrthographicSize * m_Aspect, -m_OrthographicSize, m_Far);
+        Vector3 p6 = m_Position + m_Rotation * new Vector3(m_OrthographicSize * m_Aspect, -m_OrthographicSize, m_Far);
+        Vector3 p7 = m_Position + m_Rotation * new Vector3(m_OrthographicSize * m_Aspect, m_OrthographicSize, m_Far);
+        Vector3 p8 = m_Position + m_Rotation * new Vector3(-m_OrthographicSize * m_Aspect, m_OrthographicSize, m_Far);
 
-        Gizmos.DrawLine(p1, p5);
-        Gizmos.DrawLine(p2, p6);
-        Gizmos.DrawLine(p3, p7);
-        Gizmos.DrawLine(p4, p8);
+        Vector3 min = OTProjectorUtils.GetMinVector(p1, p2);
+        min = OTProjectorUtils.GetMinVector(min, p3);
+        min = OTProjectorUtils.GetMinVector(min, p4);
+        min = OTProjectorUtils.GetMinVector(min, p5);
+        min = OTProjectorUtils.GetMinVector(min, p6);
+        min = OTProjectorUtils.GetMinVector(min, p7);
+        min = OTProjectorUtils.GetMinVector(min, p8);
+        Vector3 max = OTProjectorUtils.GetMaxVector(p1, p2);
+        max = OTProjectorUtils.GetMaxVector(max, p3);
+        max = OTProjectorUtils.GetMaxVector(max, p4);
+        max = OTProjectorUtils.GetMaxVector(max, p5);
+        max = OTProjectorUtils.GetMaxVector(max, p6);
+        max = OTProjectorUtils.GetMaxVector(max, p7);
+        max = OTProjectorUtils.GetMaxVector(max, p8);
+
+        Vector3 si = max - min;
+        Vector3 ct = min + si / 2;
+
+        m_Bounds = new Bounds(ct, si);
+
+        Matrix4x4 pjMatrix = Matrix4x4.Ortho(-m_OrthographicSize*m_Aspect, m_OrthographicSize*m_Aspect,
+            -m_OrthographicSize, m_OrthographicSize, m_Near, m_Far);
+
+        material.SetMatrix("internal_Projector", pjMatrix);
+    }
+
+    void BuildProjectorMesh(object state)
+    {
+        if (state == null)
+            return;
+        OTMesh mesh = (OTMesh) state;
+        mesh.PreBuildMesh();
+        //lock (m_Mesh)
+        {
+            mesh.PreBuildMesh();
+            m_OcTree.Trigger(m_Bounds, mesh, m_Handle);
+            mesh.PostBuildMesh();
+        }
+
+    }
+
+    void OcTreeTriggerHandle(OTMesh mesh, OcTreeProjector.OTMeshTriangle triangle)
+    {
+         mesh.AddTriangle(triangle);
+    }
+
+    void OnDrawGizmos()
+    {
+        this.DrawProjectorGizmos();
     }
 }
