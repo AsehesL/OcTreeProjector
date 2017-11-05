@@ -13,7 +13,7 @@ Shader "Projector/OT_Multiply2" {
 			ZWrite Off
 			ColorMask RGB
 			Blend DstColor Zero
-			Offset -1, -1
+			Offset -3, -3
 
 			CGPROGRAM
 			#pragma vertex vert

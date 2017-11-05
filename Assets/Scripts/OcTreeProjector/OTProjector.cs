@@ -41,6 +41,8 @@ public class OTProjector : MonoBehaviour
 
     private WaitCallback m_BuildMeshCallBack;
 
+    private MaterialPropertyBlock m_PropertyBlock;
+
     void Start()
     {
         if (string.IsNullOrEmpty(ocTreeName))
@@ -62,6 +64,9 @@ public class OTProjector : MonoBehaviour
         m_MeshRenderer.transform.rotation = Quaternion.identity;
         m_MeshRenderer.sharedMaterial = material;
 
+        m_PropertyBlock = new MaterialPropertyBlock();
+        m_MeshRenderer.SetPropertyBlock(m_PropertyBlock);
+
         m_Mesh = new OTMesh();
         m_MeshFilter.sharedMesh = m_Mesh.mesh;
 
@@ -70,32 +75,44 @@ public class OTProjector : MonoBehaviour
 
     void OnDestroy()
     {
-        if (m_MeshFilter)
-            Destroy(m_MeshFilter.gameObject);
-    }
-
-    void OnDisable()
-    {
-        if (m_MeshFilter)
-            m_MeshFilter.gameObject.SetActive(false);
+        if (m_Mesh != null)
+            m_Mesh.Release();
+        if (m_MeshRenderer)
+            Destroy(m_MeshRenderer.gameObject);
+        m_Mesh = null;
+        m_OcTree = null;
     }
 
     void OnEnable()
     {
-        if (m_MeshFilter)
-            m_MeshFilter.gameObject.SetActive(true);
+        if (m_MeshRenderer)
+            m_MeshRenderer.gameObject.SetActive(true);
     }
+
+    void OnDisable()
+    {
+        if (m_MeshRenderer)
+            m_MeshRenderer.gameObject.SetActive(false);
+    }
+
+    void Update()
+    {
+        if (m_Mesh.BuildMesh())
+        {
+        }
+        Matrix4x4 mat = Matrix4x4.Ortho(-m_OrthographicSize * m_Aspect, m_OrthographicSize * m_Aspect,
+           -m_OrthographicSize, m_OrthographicSize, m_Near, m_Far);
+        //m_Mesh.DrawMesh(material, mat * transform.worldToLocalMatrix, gameObject.layer);
+        m_PropertyBlock.SetMatrix("internal_Projector", mat * transform.worldToLocalMatrix);
+        m_MeshRenderer.SetPropertyBlock(m_PropertyBlock);
+    }
+
 
     void LateUpdate()
     {
         if (!m_IsInitialized)
             return;
-        {
-            if (m_Mesh.BuildMesh())
-            {
-                //m_MeshFilter.sharedMesh = m_Mesh.mesh;
-            }
-        }
+        
         bool rebuildMesh = false;
 
         if (m_OcTreeName != ocTreeName)
@@ -128,12 +145,17 @@ public class OTProjector : MonoBehaviour
         {
             //lock (m_Mesh)
             {
-                m_Mesh.worldToLocal = m_MeshRenderer.transform.worldToLocalMatrix;
+             //m_Mesh.localToProjector = Matrix4x4.Ortho(-m_OrthographicSize * m_Aspect, m_OrthographicSize * m_Aspect,
+            //-m_OrthographicSize, m_OrthographicSize, m_Near, m_Far);
+                //m_Mesh.worldToLocal = transform.worldToLocalMatrix;
             }
             ThreadPool.QueueUserWorkItem(m_BuildMeshCallBack, m_Mesh);
+            //BuildProjectorMesh(m_Mesh);
             //m_OcTree.Trigger(m_Bounds, )
         }
+
         //lock (m_Mesh)
+       
         
     }
 
@@ -179,25 +201,23 @@ public class OTProjector : MonoBehaviour
         Vector3 ct = min + si / 2;
 
         m_Bounds = new Bounds(ct, si);
-
-        Matrix4x4 pjMatrix = Matrix4x4.Ortho(-m_OrthographicSize*m_Aspect, m_OrthographicSize*m_Aspect,
-            -m_OrthographicSize, m_OrthographicSize, m_Near, m_Far);
-
-        material.SetMatrix("internal_Projector", pjMatrix);
+        
     }
 
     void BuildProjectorMesh(object state)
     {
         if (state == null)
             return;
+        if (m_OcTree == null)
+            return;
         OTMesh mesh = (OTMesh) state;
         mesh.PreBuildMesh();
         //lock (m_Mesh)
-        {
-            mesh.PreBuildMesh();
+        //{
+        //    mesh.PreBuildMesh();
             m_OcTree.Trigger(m_Bounds, mesh, m_Handle);
             mesh.PostBuildMesh();
-        }
+        //}
 
     }
 

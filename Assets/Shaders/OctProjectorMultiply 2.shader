@@ -3,7 +3,7 @@
 // Upgrade NOTE: replaced '_Projector' with 'unity_Projector'
 // Upgrade NOTE: replaced '_ProjectorClip' with 'unity_ProjectorClip'
 
-Shader "Projector/OT_Multiply" {
+Shader "Projector/OT_Multiply2" {
 	Properties {
 		_ShadowTex ("Cookie", 2D) = "gray" {}
 	}
@@ -22,18 +22,14 @@ Shader "Projector/OT_Multiply" {
 			#include "UnityCG.cginc"
 			
 			struct v2f {
-				float4 uvShadow : TEXCOORD0;
-				UNITY_FOG_COORDS(1)
+				UNITY_FOG_COORDS(0)
 				float4 pos : SV_POSITION;
 			};
-			
-			float4x4 internal_Projector;
 			
 			v2f vert (float4 vertex : POSITION)
 			{
 				v2f o;
 				o.pos = UnityObjectToClipPos (vertex);
-				o.uvShadow = mul (internal_Projector, vertex);
 				UNITY_TRANSFER_FOG(o,o.pos);
 				return o;
 			}
@@ -42,10 +38,7 @@ Shader "Projector/OT_Multiply" {
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				half2 uv = i.uvShadow.xy / i.uvShadow.w * 0.5+0.5;
-				fixed4 texS = tex2D(_ShadowTex,uv);
-				//fixed4 texS = tex2Dproj (_ShadowTex, UNITY_PROJ_COORD(i.uvShadow));
-				texS.a = 1.0-texS.a;
+				fixed4 texS = fixed4(0,0,0,0.5);
 
 				UNITY_APPLY_FOG_COLOR(i.fogCoord, texS, fixed4(1,1,1,1));
 				return texS;
