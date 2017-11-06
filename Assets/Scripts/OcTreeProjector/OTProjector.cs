@@ -138,7 +138,7 @@ public class OTProjector : MonoBehaviour
     {
         if (string.IsNullOrEmpty(m_OcTreeName))
             return false;
-        m_OcTree = Resources.Load<MeshOcTree>(ocTreeName);
+        m_OcTree = Resources.Load<MeshOcTree>(m_OcTreeName);
         if (m_OcTree == null)
             return false;
         return true;
