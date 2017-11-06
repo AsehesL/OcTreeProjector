@@ -41,7 +41,7 @@ public class OTProjector : MonoBehaviour
 
     private WaitCallback m_BuildMeshCallBack;
 
-    private MaterialPropertyBlock m_PropertyBlock;
+    //private MaterialPropertyBlock m_PropertyBlock;
 
     void Start()
     {
@@ -64,8 +64,8 @@ public class OTProjector : MonoBehaviour
         m_MeshRenderer.transform.rotation = Quaternion.identity;
         m_MeshRenderer.sharedMaterial = material;
 
-        m_PropertyBlock = new MaterialPropertyBlock();
-        m_MeshRenderer.SetPropertyBlock(m_PropertyBlock);
+        //m_PropertyBlock = new MaterialPropertyBlock();
+        //m_MeshRenderer.SetPropertyBlock(m_PropertyBlock);
 
         m_Mesh = new OTMesh();
         m_MeshFilter.sharedMesh = m_Mesh.mesh;
@@ -100,11 +100,11 @@ public class OTProjector : MonoBehaviour
         if (m_Mesh.BuildMesh())
         {
         }
-        Matrix4x4 mat = Matrix4x4.Ortho(-m_OrthographicSize * m_Aspect, m_OrthographicSize * m_Aspect,
-           -m_OrthographicSize, m_OrthographicSize, m_Near, m_Far);
+        //Matrix4x4 mat = Matrix4x4.Ortho(-m_OrthographicSize * m_Aspect, m_OrthographicSize * m_Aspect,
+        //   -m_OrthographicSize, m_OrthographicSize, m_Near, m_Far);
         //m_Mesh.DrawMesh(material, mat * transform.worldToLocalMatrix, gameObject.layer);
-        m_PropertyBlock.SetMatrix("internal_Projector", mat * transform.worldToLocalMatrix);
-        m_MeshRenderer.SetPropertyBlock(m_PropertyBlock);
+        //m_PropertyBlock.SetMatrix("internal_Projector", mat * transform.worldToLocalMatrix);
+        //m_MeshRenderer.SetPropertyBlock(m_PropertyBlock);
     }
 
 
@@ -145,9 +145,12 @@ public class OTProjector : MonoBehaviour
         {
             //lock (m_Mesh)
             {
-             //m_Mesh.localToProjector = Matrix4x4.Ortho(-m_OrthographicSize * m_Aspect, m_OrthographicSize * m_Aspect,
-            //-m_OrthographicSize, m_OrthographicSize, m_Near, m_Far);
+                //m_Mesh.localToProjector = Matrix4x4.Ortho(-m_OrthographicSize * m_Aspect, m_OrthographicSize * m_Aspect,
+                //-m_OrthographicSize, m_OrthographicSize, m_Near, m_Far);
                 //m_Mesh.worldToLocal = transform.worldToLocalMatrix;
+                Matrix4x4 mat = Matrix4x4.Ortho(-m_OrthographicSize * m_Aspect, m_OrthographicSize * m_Aspect,
+                   -m_OrthographicSize, m_OrthographicSize, m_Near, m_Far);
+                m_Mesh.SetMatrix(mat*transform.worldToLocalMatrix);
             }
             ThreadPool.QueueUserWorkItem(m_BuildMeshCallBack, m_Mesh);
             //BuildProjectorMesh(m_Mesh);
