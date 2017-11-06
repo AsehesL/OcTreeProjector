@@ -25,6 +25,8 @@ namespace OcTreeProjector
         private volatile bool m_IsMeshRebuilt;
 
         private volatile bool m_IsUpdatedMatrix;
+
+        private object m_Lock;
         
 
         public OTMesh()
@@ -34,6 +36,7 @@ namespace OcTreeProjector
             m_UVList = new List<Vector2>();
             m_Mesh = new Mesh();
             m_Mesh.MarkDynamic();
+            m_Lock = new object();
         }
 
         public void SetMatrix(Matrix4x4 matrix, Bounds bounds)
@@ -48,9 +51,12 @@ namespace OcTreeProjector
         public void PreBuildMesh()
         {
             m_Index = 0;
-            m_VertexList.Clear();
-            m_UVList.Clear();
-            m_Indexes.Clear();
+            lock (m_Lock)
+            {
+                m_VertexList.Clear();
+                m_UVList.Clear();
+                m_Indexes.Clear();
+            }
         }
 
         public void PostBuildMesh()
@@ -63,10 +69,13 @@ namespace OcTreeProjector
         {
             if (m_IsMeshRebuilt)
             {
-                m_Mesh.Clear();
-                m_Mesh.SetVertices(m_VertexList);
-                m_Mesh.SetUVs(0, m_UVList);
-                m_Mesh.SetTriangles(m_Indexes, 0);
+                lock (m_Lock)
+                {
+                    m_Mesh.Clear();
+                    m_Mesh.SetVertices(m_VertexList);
+                    m_Mesh.SetUVs(0, m_UVList);
+                    m_Mesh.SetTriangles(m_Indexes, 0);
+                }
                 m_IsMeshRebuilt = false;
             }
         }
@@ -78,22 +87,25 @@ namespace OcTreeProjector
 
         public void AddTriangle(OTMeshTriangle triangle)
         {
-            m_VertexList.Add(triangle.vertex0);
-            m_VertexList.Add(triangle.vertex1);
-            m_VertexList.Add(triangle.vertex2);
+            lock (m_Lock)
+            {
+                m_VertexList.Add(triangle.vertex0);
+                m_VertexList.Add(triangle.vertex1);
+                m_VertexList.Add(triangle.vertex2);
 
-            Vector3 pj0 = m_WorldToProjector.MultiplyPoint(triangle.vertex0);
-            Vector3 pj1 = m_WorldToProjector.MultiplyPoint(triangle.vertex1);
-            Vector3 pj2 = m_WorldToProjector.MultiplyPoint(triangle.vertex2);
+                Vector3 pj0 = m_WorldToProjector.MultiplyPoint(triangle.vertex0);
+                Vector3 pj1 = m_WorldToProjector.MultiplyPoint(triangle.vertex1);
+                Vector3 pj2 = m_WorldToProjector.MultiplyPoint(triangle.vertex2);
 
-            m_UVList.Add(new Vector2(pj0.x*0.5f+0.5f, pj0.y*0.5f+0.5f));
-            m_UVList.Add(new Vector2(pj1.x*0.5f+0.5f, pj1.y*0.5f+0.5f));
-            m_UVList.Add(new Vector2(pj2.x*0.5f+0.5f, pj2.y*0.5f+0.5f));
+                m_UVList.Add(new Vector2(pj0.x*0.5f + 0.5f, pj0.y*0.5f + 0.5f));
+                m_UVList.Add(new Vector2(pj1.x*0.5f + 0.5f, pj1.y*0.5f + 0.5f));
+                m_UVList.Add(new Vector2(pj2.x*0.5f + 0.5f, pj2.y*0.5f + 0.5f));
 
-            m_Indexes.Add(m_Index + 0);
-            m_Indexes.Add(m_Index + 1);
-            m_Indexes.Add(m_Index + 2);
-            m_Index += 3;
+                m_Indexes.Add(m_Index + 0);
+                m_Indexes.Add(m_Index + 1);
+                m_Indexes.Add(m_Index + 2);
+                m_Index += 3;
+            }
         }
 
         public void Release()
