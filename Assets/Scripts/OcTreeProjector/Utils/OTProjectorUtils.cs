@@ -90,5 +90,62 @@ namespace OcTreeProjector
             Gizmos.DrawLine(p3, p7);
             Gizmos.DrawLine(p4, p8);
         }
+
+        public static Bounds OrthoBounds(Vector3 position, Quaternion rotation, float size, float aspect, float near, float far)
+        {
+            Vector3 p1 = position + rotation * new Vector3(-size * aspect, -size, near);
+            Vector3 p2 = position + rotation * new Vector3(size * aspect, -size, near);
+            Vector3 p3 = position + rotation * new Vector3(size * aspect, size, near);
+            Vector3 p4 = position + rotation * new Vector3(-size * aspect, size, near);
+            Vector3 p5 = position + rotation * new Vector3(-size * aspect, -size, far);
+            Vector3 p6 = position + rotation * new Vector3(size * aspect, -size, far);
+            Vector3 p7 = position + rotation * new Vector3(size * aspect, size, far);
+            Vector3 p8 = position + rotation * new Vector3(-size * aspect, size, far);
+
+            return GetBounds(p1, p2, p3, p4, p5, p6, p7, p8);
+        }
+
+        public static Bounds PerspectiveBounds(Vector3 position, Quaternion rotation, float fov, float aspect,
+            float near, float far)
+        {
+            float tfov = Mathf.Tan(fov*Mathf.Deg2Rad/2);
+            float ny = tfov*near;
+            float fy = tfov*far;
+
+            Vector3 p1 = position + rotation*new Vector3(-aspect*ny, -ny, near);
+            Vector3 p2 = position + rotation*new Vector3(-aspect*ny, ny, near);
+            Vector3 p3 = position + rotation*new Vector3(aspect*ny, ny, near);
+            Vector3 p4 = position + rotation*new Vector3(aspect*ny, -ny, near);
+
+            Vector3 p5 = position + rotation*new Vector3(-aspect* fy, -fy, far);
+            Vector3 p6 = position + rotation*new Vector3(-aspect* fy, fy, far);
+            Vector3 p7 = position + rotation*new Vector3(aspect* fy, fy, far);
+            Vector3 p8 = position + rotation*new Vector3(aspect* fy, -fy, far);
+
+            return GetBounds(p1, p2, p3, p4, p5, p6, p7, p8);
+        }
+
+        private static Bounds GetBounds(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Vector3 p5, Vector3 p6,
+            Vector3 p7, Vector3 p8)
+        {
+            Vector3 min = OTProjectorUtils.GetMinVector(p1, p2);
+            min = OTProjectorUtils.GetMinVector(min, p3);
+            min = OTProjectorUtils.GetMinVector(min, p4);
+            min = OTProjectorUtils.GetMinVector(min, p5);
+            min = OTProjectorUtils.GetMinVector(min, p6);
+            min = OTProjectorUtils.GetMinVector(min, p7);
+            min = OTProjectorUtils.GetMinVector(min, p8);
+            Vector3 max = OTProjectorUtils.GetMaxVector(p1, p2);
+            max = OTProjectorUtils.GetMaxVector(max, p3);
+            max = OTProjectorUtils.GetMaxVector(max, p4);
+            max = OTProjectorUtils.GetMaxVector(max, p5);
+            max = OTProjectorUtils.GetMaxVector(max, p6);
+            max = OTProjectorUtils.GetMaxVector(max, p7);
+            max = OTProjectorUtils.GetMaxVector(max, p8);
+
+            Vector3 si = max - min;
+            Vector3 ct = min + si / 2;
+            return new Bounds(ct, si);
+        }
     }
 }
