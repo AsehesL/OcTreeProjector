@@ -12,6 +12,8 @@ namespace OcTreeProjector
 
         public Bounds bounds { get { return m_Bounds; } }
 
+        public MeshOcTreeTriggerHandle handle { get { return m_Handle; } }
+
         public List<Vector3> m_VertexList;
         public List<Vector2> m_UVList;
 
@@ -29,6 +31,8 @@ namespace OcTreeProjector
 
         private volatile bool m_IsUpdatedMatrix;
 
+        private MeshOcTreeTriggerHandle m_Handle;
+
         private object m_Lock;
         
 
@@ -40,6 +44,7 @@ namespace OcTreeProjector
             m_Mesh = new Mesh();
             m_Mesh.MarkDynamic();
             m_Lock = new object();
+            m_Handle = OcTreeTriggerHandle;
         }
 
         /// <summary>
@@ -57,9 +62,9 @@ namespace OcTreeProjector
         }
 
         /// <summary>
-        /// 构造Mesh前操作
+        /// 从OcTree构造Mesh
         /// </summary>
-        public void PreBuildMesh()
+        public void BuildMesh(MeshOcTree tree)
         {
             m_Index = 0;
             lock (m_Lock)
@@ -67,17 +72,36 @@ namespace OcTreeProjector
                 m_VertexList.Clear();
                 m_UVList.Clear();
                 m_Indexes.Clear();
+
+                tree.Trigger(m_Bounds, this, m_Handle);
+
+                m_IsMeshRebuilt = true;
+                m_IsUpdatedMatrix = false;
             }
         }
 
-        /// <summary>
-        /// 构造Mesh后操作
-        /// </summary>
-        public void PostBuildMesh()
-        {
-            m_IsMeshRebuilt = true;
-            m_IsUpdatedMatrix = false;
-        }
+        ///// <summary>
+        ///// 构造Mesh前操作
+        ///// </summary>
+        //public void PreBuildMesh()
+        //{
+        //    m_Index = 0;
+        //    lock (m_Lock)
+        //    {
+        //        m_VertexList.Clear();
+        //        m_UVList.Clear();
+        //        m_Indexes.Clear();
+        //    }
+        //}
+
+        ///// <summary>
+        ///// 构造Mesh后操作
+        ///// </summary>
+        //public void PostBuildMesh()
+        //{
+        //    m_IsMeshRebuilt = true;
+        //    m_IsUpdatedMatrix = false;
+        //}
 
         /// <summary>
         /// 刷新Mesh
@@ -113,7 +137,7 @@ namespace OcTreeProjector
         /// <param name="triangle"></param>
         public void AddTriangle(OTMeshTriangle triangle)
         {
-            lock (m_Lock)
+            //lock (m_Lock)
             {
                 m_VertexList.Add(triangle.vertex0);
                 m_VertexList.Add(triangle.vertex1);
@@ -138,6 +162,11 @@ namespace OcTreeProjector
         {
             if (m_Mesh)
                 Object.Destroy(m_Mesh);
+        }
+
+        void OcTreeTriggerHandle(OctProjectorMesh mesh, OcTreeProjector.OTMeshTriangle triangle)
+        {
+            mesh.AddTriangle(triangle);
         }
     }
 }

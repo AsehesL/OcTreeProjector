@@ -37,8 +37,6 @@ public class OTProjector : MonoBehaviour
 
     private Bounds m_Bounds;
 
-    private MeshOcTreeTriggerHandle m_Handle;
-
     private OctProjectorMesh m_Mesh;
 
     private WaitCallback m_BuildMeshCallBack;
@@ -56,7 +54,7 @@ public class OTProjector : MonoBehaviour
             return;
         m_OcTreeName = ocTreeName;
 
-        m_Handle = OcTreeTriggerHandle;
+        //m_Handle = OcTreeTriggerHandle;
         m_BuildMeshCallBack = BuildProjectorMesh;
 
         m_Mesh = new OctProjectorMesh();
@@ -70,7 +68,6 @@ public class OTProjector : MonoBehaviour
             m_Mesh.Release();
         m_Mesh = null;
         m_OcTree = null;
-        m_Handle = null;
         m_BuildMeshCallBack = null;
     }
 
@@ -189,16 +186,14 @@ public class OTProjector : MonoBehaviour
         if (m_OcTree == null)
             return;
         OctProjectorMesh mesh = (OctProjectorMesh) state;
-        mesh.PreBuildMesh();
 
-        m_OcTree.Trigger(mesh.bounds, mesh, m_Handle);
-        mesh.PostBuildMesh();
+        mesh.BuildMesh(m_OcTree);
 
-    }
+        //mesh.PreBuildMesh();
 
-    void OcTreeTriggerHandle(OctProjectorMesh mesh, OcTreeProjector.OTMeshTriangle triangle)
-    {
-        mesh.AddTriangle(triangle);
+        //m_OcTree.Trigger(mesh.bounds, mesh, m_Handle);
+        //mesh.PostBuildMesh();
+
     }
 
     void OnDrawGizmosSelected()
