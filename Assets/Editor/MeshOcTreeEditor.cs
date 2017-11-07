@@ -11,8 +11,7 @@ public class MeshOcTreeEditor : Editor
     [MenuItem("Assets/Create/OcTreeProjector/OcTree")]
     static void CreateTree()
     {
-        MeshOcTree tree = MeshOcTree.CreateInstance<MeshOcTree>();
-        ProjectWindowUtil.CreateAsset(tree, "New Tree.asset");
+        ScriptableWizard.DisplayWizard<OcTreeCreateWizard>("从选中物体创建OcTree");
     }
 
     void OnEnable()
@@ -28,7 +27,6 @@ public class MeshOcTreeEditor : Editor
         }
         else
         {
-            //base.OnInspectorGUI();
             GUILayout.Label("节点数：" + m_Target.count);
             GUILayout.Label("最大深度：" + m_Target.maxDepth);
             GUILayout.Label("中心坐标：" + m_Target.Bounds.center);
@@ -37,14 +35,14 @@ public class MeshOcTreeEditor : Editor
         if (GUILayout.Button("重建OcTree"))
         {
             var wizard = ScriptableWizard.DisplayWizard<OcTreeCreateWizard>("从选中物体创建OcTree");
-            wizard.tree = m_Target;
+            wizard.path = AssetDatabase.GetAssetPath(m_Target);
         }
     }
 }
 
 public class OcTreeCreateWizard : ScriptableWizard
 {
-    public MeshOcTree tree;
+    public string path;
 
     private GameObject m_GameObject;
     private bool m_ContainChilds;
@@ -63,14 +61,12 @@ public class OcTreeCreateWizard : ScriptableWizard
         GUILayout.Space(40);
         if (GUILayout.Button("创建"))
         {
-            if (tree == null)
-                return;
-            BuildOcTree(tree);
+            BuildOcTree();
             Close();
         }
     }
 
-    private void BuildOcTree(MeshOcTree tree)
+    private void BuildOcTree()
     {
         if (m_GameObject == null)
             return;
@@ -129,18 +125,33 @@ public class OcTreeCreateWizard : ScriptableWizard
         }
 
         Vector3 size = new Vector3(maxX - minX, maxY - minY, maxZ - minZ);
+        if (size.x <= 0)
+            size.x = 0.1f;
+        if (size.y <= 0)
+            size.y = 0.1f;
+        if (size.z <= 0)
+            size.z = 0.1f;
         Vector3 center = new Vector3(minX, minY, minZ) + size/2;
-       
+
+        MeshOcTree tree = MeshOcTree.CreateInstance<MeshOcTree>();
+
         tree.Build(center, size*1.1f, 5);
         for (int i = 0; i < triangles.Count; i++)
         {
             tree.Add(triangles[i]);
         }
 
-        string path = AssetDatabase.GetAssetPath(tree);
-        AssetDatabase.SaveAssets();
-        AssetImporter importer = AssetImporter.GetAtPath(path);
-        importer.SaveAndReimport();
+
+        if (!string.IsNullOrEmpty(path))
+        {
+
+            AssetDatabase.CreateAsset(tree, path);
+        }
+        else
+        {
+            ProjectWindowUtil.CreateAsset(tree, "New OcTree.asset");
+        }
+
     }
 
 }

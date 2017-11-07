@@ -198,7 +198,7 @@ public class OTProjector : MonoBehaviour
         mesh.AddTriangle(triangle);
     }
 
-    void OnDrawGizmos()
+    void OnDrawGizmosSelected()
     {
         this.DrawProjectorGizmos();
         if (debug)

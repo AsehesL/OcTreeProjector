@@ -188,7 +188,7 @@ namespace OcTreeProjector
             {
                 for (int i = 0; i < m_ItemList.Count; i++)
                 {
-                    m_ItemList[i].DrawArea(0, 0, 0);
+                    m_ItemList[i].DrawArea();
                 }
             }
         }
@@ -201,7 +201,7 @@ namespace OcTreeProjector
             {
                 for (int i = 0; i < m_ItemList.Count; i++)
                 {
-                    m_ItemList[i].DrawArea(0, 0, 0);
+                    m_ItemList[i].DrawArea();
                 }
             }
         }

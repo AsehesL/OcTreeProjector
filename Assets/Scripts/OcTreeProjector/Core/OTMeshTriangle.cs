@@ -30,11 +30,17 @@ namespace OcTreeProjector
             float maxY = Mathf.Max(vertex0.y, vertex1.y, vertex2.y);
             float maxZ = Mathf.Max(vertex0.z, vertex1.z, vertex2.z);
 
-            float minX = Mathf.Max(vertex0.x, vertex1.x, vertex2.x);
-            float minY = Mathf.Max(vertex0.y, vertex1.y, vertex2.y);
-            float minZ = Mathf.Max(vertex0.z, vertex1.z, vertex2.z);
+            float minX = Mathf.Min(vertex0.x, vertex1.x, vertex2.x);
+            float minY = Mathf.Min(vertex0.y, vertex1.y, vertex2.y);
+            float minZ = Mathf.Min(vertex0.z, vertex1.z, vertex2.z);
 
             Vector3 si = new Vector3(maxX - minX, maxY - minY, maxZ - minZ);
+            if (si.x <= 0)
+                si.x = 0.1f;
+            if (si.y <= 0)
+                si.y = 0.1f;
+            if (si.z <= 0)
+                si.z = 0.1f;
             Vector3 ct = new Vector3(minX, minY, minZ) + si / 2;
 
             this.m_Bounds = new Bounds(ct, si);
@@ -50,20 +56,14 @@ namespace OcTreeProjector
             return this.bounds.Intersects(bounds);
         }
 
-        public void DrawArea(Color color)
+        public void DrawArea()
         {
-            Gizmos.color = color;
-            bounds.DrawBounds(color);
+            bounds.DrawBounds(Color.black);
 
             Gizmos.color = Color.cyan;
             Gizmos.DrawLine(vertex0, vertex1);
             Gizmos.DrawLine(vertex0, vertex2);
             Gizmos.DrawLine(vertex1, vertex2);
-        }
-
-        public void DrawArea(float H, float S, float V)
-        {
-            DrawArea(Color.HSVToRGB(H, S, V));
         }
     }
 }
