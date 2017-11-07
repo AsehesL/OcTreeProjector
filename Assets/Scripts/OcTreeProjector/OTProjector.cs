@@ -3,6 +3,9 @@ using System.Threading;
 using System.Collections;
 using OcTreeProjector;
 
+/// <summary>
+/// 八叉树Projector
+/// </summary>
 public class OTProjector : MonoBehaviour
 {
     public float near = 0.1f;
@@ -36,7 +39,7 @@ public class OTProjector : MonoBehaviour
 
     private MeshOcTreeTriggerHandle m_Handle;
 
-    private OTMesh m_Mesh;
+    private OctProjectorMesh m_Mesh;
 
     private WaitCallback m_BuildMeshCallBack;
 
@@ -56,7 +59,7 @@ public class OTProjector : MonoBehaviour
         m_Handle = OcTreeTriggerHandle;
         m_BuildMeshCallBack = BuildProjectorMesh;
 
-        m_Mesh = new OTMesh();
+        m_Mesh = new OctProjectorMesh();
 
         m_IsInitialized = true;
     }
@@ -129,7 +132,7 @@ public class OTProjector : MonoBehaviour
         }
         if (rebuildMesh)
         {
-            m_Mesh.SetMatrix(m_WorldToProjector, m_Bounds);
+            m_Mesh.SetMeshParams(m_WorldToProjector, m_Bounds);
             ThreadPool.QueueUserWorkItem(m_BuildMeshCallBack, m_Mesh);
         }
 
@@ -185,7 +188,7 @@ public class OTProjector : MonoBehaviour
             return;
         if (m_OcTree == null)
             return;
-        OTMesh mesh = (OTMesh) state;
+        OctProjectorMesh mesh = (OctProjectorMesh) state;
         mesh.PreBuildMesh();
 
         m_OcTree.Trigger(mesh.bounds, mesh, m_Handle);
@@ -193,7 +196,7 @@ public class OTProjector : MonoBehaviour
 
     }
 
-    void OcTreeTriggerHandle(OTMesh mesh, OcTreeProjector.OTMeshTriangle triangle)
+    void OcTreeTriggerHandle(OctProjectorMesh mesh, OcTreeProjector.OTMeshTriangle triangle)
     {
         mesh.AddTriangle(triangle);
     }

@@ -3,7 +3,10 @@ using System.Collections.Generic;
 
 namespace OcTreeProjector
 {
-    public class OTMesh
+    /// <summary>
+    /// Projector渲染Mesh
+    /// </summary>
+    public class OctProjectorMesh
     {
         public Mesh mesh { get { return m_Mesh; } }
 
@@ -29,7 +32,7 @@ namespace OcTreeProjector
         private object m_Lock;
         
 
-        public OTMesh()
+        public OctProjectorMesh()
         {
             m_VertexList = new List<Vector3>();
             m_Indexes = new List<int>();
@@ -39,15 +42,23 @@ namespace OcTreeProjector
             m_Lock = new object();
         }
 
-        public void SetMatrix(Matrix4x4 matrix, Bounds bounds)
+        /// <summary>
+        /// 设置Mesh参数
+        /// </summary>
+        /// <param name="matrix">世界到投影空间矩阵</param>
+        /// <param name="bounds">包围盒</param>
+        public void SetMeshParams(Matrix4x4 worldToProjector, Bounds bounds)
         {
             if (m_IsUpdatedMatrix)
                 return;
             m_IsUpdatedMatrix = true;
-            m_WorldToProjector = matrix;
+            m_WorldToProjector = worldToProjector;
             m_Bounds = bounds;
         }
 
+        /// <summary>
+        /// 构造Mesh前操作
+        /// </summary>
         public void PreBuildMesh()
         {
             m_Index = 0;
@@ -59,12 +70,18 @@ namespace OcTreeProjector
             }
         }
 
+        /// <summary>
+        /// 构造Mesh后操作
+        /// </summary>
         public void PostBuildMesh()
         {
             m_IsMeshRebuilt = true;
             m_IsUpdatedMatrix = false;
         }
 
+        /// <summary>
+        /// 刷新Mesh
+        /// </summary>
         public void RefreshMesh()
         {
             if (m_IsMeshRebuilt)
@@ -80,11 +97,20 @@ namespace OcTreeProjector
             }
         }
 
+        /// <summary>
+        /// 渲染Mesh
+        /// </summary>
+        /// <param name="material"></param>
+        /// <param name="layer"></param>
         public void DrawMesh(Material material, LayerMask layer)
         {
             Graphics.DrawMesh(m_Mesh, Matrix4x4.identity, material, layer);
         }
 
+        /// <summary>
+        /// 添加三角面
+        /// </summary>
+        /// <param name="triangle"></param>
         public void AddTriangle(OTMeshTriangle triangle)
         {
             lock (m_Lock)

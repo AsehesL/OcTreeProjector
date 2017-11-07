@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace OcTreeProjector
 {
-    public delegate void MeshOcTreeTriggerHandle(OTMesh mesh, OTMeshTriangle triangle);
+    public delegate void MeshOcTreeTriggerHandle(OctProjectorMesh mesh, OTMeshTriangle triangle);
 
     /// <summary>
     /// 八叉树
@@ -136,7 +136,7 @@ namespace OcTreeProjector
                 return false;
         }
 
-        public void Trigger(Bounds bounds, OTMesh mesh, MeshOcTreeTriggerHandle handle)
+        public void Trigger(Bounds bounds, OctProjectorMesh mesh, MeshOcTreeTriggerHandle handle)
         {
             if (handle == null)
                 return;

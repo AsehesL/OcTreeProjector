@@ -93,6 +93,8 @@ public class OcTreeCreateWizard : ScriptableWizard
 
         List<OTMeshTriangle> triangles = new List<OTMeshTriangle>();
 
+        EditorUtility.ClearProgressBar();
+
         for (int i = 0; i < mf.Length; i++)
         {
             if (mf[i].sharedMesh == null)
@@ -100,6 +102,8 @@ public class OcTreeCreateWizard : ScriptableWizard
 
             for (int j = 0; j < mf[i].sharedMesh.triangles.Length; j += 3)
             {
+                EditorUtility.DisplayProgressBar("生成OcTree", "正在计算包围盒", ((float) j)/mf[i].sharedMesh.triangles.Length);
+
                 Vector3 p1 =
                     mf[i].transform.localToWorldMatrix.MultiplyPoint(
                         mf[i].sharedMesh.vertices[mf[i].sharedMesh.triangles[j]]);
@@ -138,8 +142,11 @@ public class OcTreeCreateWizard : ScriptableWizard
         tree.Build(center, size*1.1f, 5);
         for (int i = 0; i < triangles.Count; i++)
         {
+            EditorUtility.DisplayProgressBar("生成OcTree", "正在生成OcTree", ((float)i) / triangles.Count);
             tree.Add(triangles[i]);
         }
+
+        EditorUtility.ClearProgressBar();
 
 
         if (!string.IsNullOrEmpty(path))

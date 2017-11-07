@@ -5,6 +5,9 @@ using System.Collections.Generic;
 
 namespace OcTreeProjector
 {
+    /// <summary>
+    /// 八叉树节点
+    /// </summary>
     [System.Serializable]
     internal class MeshOcTreeNode
     {
@@ -80,7 +83,7 @@ namespace OcTreeProjector
             return false;
         }
 
-        public void Trigger(Bounds bd, OTMesh mesh, List<MeshOcTreeNode> nodeList, MeshOcTreeTriggerHandle handle)
+        public void Trigger(Bounds bd, OctProjectorMesh mesh, List<MeshOcTreeNode> nodeList, MeshOcTreeTriggerHandle handle)
         {
             if (handle == null)
                 return;

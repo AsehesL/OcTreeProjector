@@ -22,18 +22,16 @@ Shader "Projector/OT_Multiply" {
 			#include "UnityCG.cginc"
 			
 			struct v2f {
-				float4 uvShadow : TEXCOORD0;
+				float2 uvShadow : TEXCOORD0;
 				UNITY_FOG_COORDS(1)
 				float4 pos : SV_POSITION;
 			};
 			
-			float4x4 internal_Projector;
-			
-			v2f vert (float4 vertex : POSITION)
+			v2f vert (float4 vertex : POSITION, float2 uv:TEXCOORD0)
 			{
 				v2f o;
 				o.pos = UnityObjectToClipPos (vertex);
-				o.uvShadow = mul (internal_Projector, vertex);
+				o.uvShadow = uv;
 				UNITY_TRANSFER_FOG(o,o.pos);
 				return o;
 			}
@@ -42,9 +40,7 @@ Shader "Projector/OT_Multiply" {
 			
 			fixed4 frag (v2f i) : SV_Target
 			{
-				half2 uv = i.uvShadow.xy / i.uvShadow.w * 0.5+0.5;
-				fixed4 texS = tex2D(_ShadowTex,uv);
-				//fixed4 texS = tex2Dproj (_ShadowTex, UNITY_PROJ_COORD(i.uvShadow));
+				fixed4 texS = tex2D (_ShadowTex, i.uvShadow);
 				texS.a = 1.0-texS.a;
 
 				UNITY_APPLY_FOG_COLOR(i.fogCoord, texS, fixed4(1,1,1,1));
