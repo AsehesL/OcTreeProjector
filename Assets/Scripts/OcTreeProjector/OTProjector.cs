@@ -15,6 +15,8 @@ public class OTProjector : MonoBehaviour
 
     public string ocTreeName;
 
+    public bool debug;
+
     private Vector3 m_Position;
     private Quaternion m_Rotation;
     private float m_OrthographicSize;
@@ -199,6 +201,11 @@ public class OTProjector : MonoBehaviour
     void OnDrawGizmos()
     {
         this.DrawProjectorGizmos();
-        this.m_Bounds.DrawBounds(Color.black);
+        if (debug)
+        {
+            this.m_Bounds.DrawBounds(Color.black);
+            if (this.m_OcTree)
+                m_OcTree.DrawTree(0, 0.1f);
+        }
     }
 }

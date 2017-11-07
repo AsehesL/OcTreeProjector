@@ -78,5 +78,8 @@ public class OTProjectorEditor : Editor
         {
             m_Target.ocTreeName = m_Trees[m_Index];
         }
+
+        EditorGUILayout.Space();
+        m_Target.debug = EditorGUILayout.Toggle("DebugMode", m_Target.debug);
     }
 }
