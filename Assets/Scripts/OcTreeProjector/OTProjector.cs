@@ -35,7 +35,7 @@ public class OTProjector : MonoBehaviour
 
     private MeshOcTree m_OcTree;
 
-    private Bounds m_Bounds;
+    //private Bounds m_Bounds;
 
     private OctProjectorMesh m_Mesh;
 
@@ -129,7 +129,7 @@ public class OTProjector : MonoBehaviour
         }
         if (rebuildMesh)
         {
-            m_Mesh.SetMeshParams(m_WorldToProjector, m_Bounds);
+            m_Mesh.SetMeshParams(m_WorldToProjector);
             ThreadPool.QueueUserWorkItem(m_BuildMeshCallBack, m_Mesh);
         }
 
@@ -165,24 +165,29 @@ public class OTProjector : MonoBehaviour
         m_Orthographic = orthographic;
 
         Matrix4x4 proj = default(Matrix4x4);
+        Matrix4x4 toLocal = transform.worldToLocalMatrix;
+        toLocal.m20 *= -1;
+        toLocal.m21 *= -1;
+        toLocal.m22 *= -1;
+        toLocal.m23 *= -1;
         if (m_Orthographic)
         {
             proj = Matrix4x4.Ortho(-m_Aspect*m_OrthographicSize, m_Aspect*m_OrthographicSize,
                 -m_OrthographicSize, m_OrthographicSize, m_Near, m_Far);
-            m_WorldToProjector = proj*transform.worldToLocalMatrix;
+            m_WorldToProjector = proj* toLocal;
         }
         else
         {
             proj = Matrix4x4.Perspective(m_FieldOfView, m_Aspect, m_Near, m_Far);
-            m_WorldToProjector = proj * transform.worldToLocalMatrix;
+            m_WorldToProjector = proj * toLocal;
         }
 
-        if (m_Orthographic)
-            m_Bounds = OTProjectorUtils.OrthoBounds(transform.position, transform.rotation, m_OrthographicSize, m_Aspect,
-                m_Near, m_Far);
-        else
-            m_Bounds = OTProjectorUtils.PerspectiveBounds(transform.position, transform.rotation, m_FieldOfView,
-                m_Aspect, m_Near, m_Far);
+        //if (m_Orthographic)
+        //    m_Bounds = OTProjectorUtils.OrthoBounds(transform.position, transform.rotation, m_OrthographicSize, m_Aspect,
+        //        m_Near, m_Far);
+        //else
+        //    m_Bounds = OTProjectorUtils.PerspectiveBounds(transform.position, transform.rotation, m_FieldOfView,
+        //        m_Aspect, m_Near, m_Far);
 
     }
 
@@ -207,7 +212,7 @@ public class OTProjector : MonoBehaviour
         this.DrawProjectorGizmos();
         if (debug)
         {
-            this.m_Bounds.DrawBounds(Color.black);
+            //this.m_Bounds.DrawBounds(Color.black);
             if (this.m_OcTree)
                 m_OcTree.DrawTree(0, 0.1f);
         }

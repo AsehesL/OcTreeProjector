@@ -46,16 +46,6 @@ namespace OcTreeProjector
             this.m_Bounds = new Bounds(ct, si);
         }
 
-        public bool Contains(Vector3 position)
-        {
-            return bounds.Contains(position);
-        }
-
-        public bool Intersects(Bounds bounds)
-        {
-            return this.bounds.Intersects(bounds);
-        }
-
         public void DrawArea()
         {
             bounds.DrawBounds(Color.black);

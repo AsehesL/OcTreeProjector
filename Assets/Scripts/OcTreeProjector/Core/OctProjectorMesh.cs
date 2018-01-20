@@ -3,14 +3,15 @@ using System.Collections.Generic;
 
 namespace OcTreeProjector
 {
+
     /// <summary>
     /// Projector渲染Mesh
     /// </summary>
-    public class OctProjectorMesh
+    public class OctProjectorMesh : ITrigger
     {
         public Mesh mesh { get { return m_Mesh; } }
 
-        public Bounds bounds { get { return m_Bounds; } }
+        //public Bounds bounds { get { return m_Bounds; } }
 
         public MeshOcTreeTriggerHandle handle { get { return m_Handle; } }
 
@@ -25,7 +26,7 @@ namespace OcTreeProjector
         
         private Matrix4x4 m_WorldToProjector;
 
-        private Bounds m_Bounds;
+        //private Bounds m_Bounds;
 
         private volatile bool m_IsMeshRebuilt;
 
@@ -52,13 +53,13 @@ namespace OcTreeProjector
         /// </summary>
         /// <param name="matrix">世界到投影空间矩阵</param>
         /// <param name="bounds">包围盒</param>
-        public void SetMeshParams(Matrix4x4 worldToProjector, Bounds bounds)
+        public void SetMeshParams(Matrix4x4 worldToProjector)
         {
             if (m_IsUpdatedMatrix)
                 return;
             m_IsUpdatedMatrix = true;
             m_WorldToProjector = worldToProjector;
-            m_Bounds = bounds;
+            //m_Bounds = bounds;
         }
 
         /// <summary>
@@ -73,7 +74,7 @@ namespace OcTreeProjector
                 m_UVList.Clear();
                 m_Indexes.Clear();
 
-                tree.Trigger(m_Bounds, this, m_Handle);
+                tree.Trigger(this, this, m_Handle);
 
                 m_IsMeshRebuilt = true;
                 m_IsUpdatedMatrix = false;
@@ -167,6 +168,11 @@ namespace OcTreeProjector
         void OcTreeTriggerHandle(OctProjectorMesh mesh, OcTreeProjector.OTMeshTriangle triangle)
         {
             mesh.AddTriangle(triangle);
+        }
+
+        public bool IsDetected(Bounds bounds)
+        {
+            return bounds.IsBoundsInProjector(m_WorldToProjector);
         }
     }
 }

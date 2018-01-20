@@ -136,12 +136,12 @@ namespace OcTreeProjector
                 return false;
         }
 
-        public void Trigger(Bounds bounds, OctProjectorMesh mesh, MeshOcTreeTriggerHandle handle)
+        public void Trigger(ITrigger trigger, OctProjectorMesh mesh, MeshOcTreeTriggerHandle handle)
         {
             if (handle == null)
                 return;
             if (m_NodeLists != null && m_NodeLists.Count > 0)
-                m_NodeLists[0].Trigger(bounds, mesh, m_NodeLists, handle);
+                m_NodeLists[0].Trigger(trigger, mesh, m_NodeLists, handle);
         }
 
         /// <summary>

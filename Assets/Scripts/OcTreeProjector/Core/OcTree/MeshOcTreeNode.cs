@@ -83,21 +83,21 @@ namespace OcTreeProjector
             return false;
         }
 
-        public void Trigger(Bounds bd, OctProjectorMesh mesh, List<MeshOcTreeNode> nodeList, MeshOcTreeTriggerHandle handle)
+        public void Trigger(ITrigger trigger, OctProjectorMesh mesh, List<MeshOcTreeNode> nodeList, MeshOcTreeTriggerHandle handle)
         {
             if (handle == null)
                 return;
             for (int i = 0; i < m_ChildNodes.Length; i++)
             {
                 if (m_ChildNodes[i] > 0)
-                    nodeList[m_ChildNodes[i]].Trigger(bd, mesh, nodeList, handle);
+                    nodeList[m_ChildNodes[i]].Trigger(trigger, mesh, nodeList, handle);
             }
 
-            if (this.bounds.Intersects(bd))
+            if (trigger.IsDetected(this.bounds))
             {
                 for (int i = 0; i < m_ItemList.Count; i++)
                 {
-                    if (m_ItemList[i].Intersects(bd))
+                    if (trigger.IsDetected(m_ItemList[i].bounds))
                         handle(mesh, m_ItemList[i]);
                 }
             }
