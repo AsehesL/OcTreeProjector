@@ -35,14 +35,14 @@ public class MeshOcTreeEditor : Editor
         if (GUILayout.Button("重建OcTree"))
         {
             var wizard = ScriptableWizard.DisplayWizard<OcTreeCreateWizard>("从选中物体创建OcTree");
-            wizard.path = AssetDatabase.GetAssetPath(m_Target);
+            //wizard.path = AssetDatabase.GetAssetPath(m_Target);
         }
     }
 }
 
 public class OcTreeCreateWizard : ScriptableWizard
 {
-    public string path;
+    //public string path;
 
     private GameObject m_GameObject;
     private bool m_ContainChilds;
@@ -149,15 +149,15 @@ public class OcTreeCreateWizard : ScriptableWizard
         EditorUtility.ClearProgressBar();
 
 
-        if (!string.IsNullOrEmpty(path))
-        {
-
-            AssetDatabase.CreateAsset(tree, path);
-        }
-        else
-        {
-            ProjectWindowUtil.CreateAsset(tree, "New OcTree.asset");
-        }
+        //if (!string.IsNullOrEmpty(path))
+        //{
+        //
+        //    AssetDatabase.CreateAsset(tree, path);
+        //}
+        //else
+        //{
+            ProjectWindowUtil.CreateAsset(tree, "Assets/Resources/New OcTree.asset");
+        //}
 
     }
 

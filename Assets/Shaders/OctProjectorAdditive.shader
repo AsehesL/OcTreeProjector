@@ -1,5 +1,5 @@
 
-Shader "Projector/OT_Multiply" {
+Shader "Projector/OT_Additive" {
 	Properties {
 		_ShadowTex ("Cookie", 2D) = "gray" {}
 	}
@@ -8,7 +8,7 @@ Shader "Projector/OT_Multiply" {
 		Pass {
 			ZWrite Off
 			ColorMask RGB
-			Blend DstColor Zero
+			Blend SrcAlpha One
 			Offset -1, -1
 
 			CGPROGRAM
@@ -37,7 +37,7 @@ Shader "Projector/OT_Multiply" {
 			fixed4 frag (v2f i) : SV_Target
 			{
 				fixed4 texS = tex2D (_ShadowTex, i.uvShadow);
-				texS.a = 1.0-texS.a;
+				//texS.a = 1.0-texS.a;
 
 				UNITY_APPLY_FOG_COLOR(i.fogCoord, texS, fixed4(1,1,1,1));
 				return texS;
