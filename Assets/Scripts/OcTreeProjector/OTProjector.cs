@@ -136,6 +136,10 @@ public class OTProjector : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// 重新加载八叉树
+    /// </summary>
+    /// <returns></returns>
     bool ReLoadOcTree()
     {
         if (string.IsNullOrEmpty(m_OcTreeName))
@@ -146,6 +150,9 @@ public class OTProjector : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 重新计算包围盒
+    /// </summary>
     void ReBuildBounds()
     {
         m_Aspect = aspect;
@@ -179,6 +186,10 @@ public class OTProjector : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// 更新Mesh
+    /// </summary>
+    /// <param name="state"></param>
     void BuildProjectorMesh(object state)
     {
         if (state == null)
@@ -188,11 +199,6 @@ public class OTProjector : MonoBehaviour
         OctProjectorMesh mesh = (OctProjectorMesh) state;
 
         mesh.BuildMesh(m_OcTree);
-
-        //mesh.PreBuildMesh();
-
-        //m_OcTree.Trigger(mesh.bounds, mesh, m_Handle);
-        //mesh.PostBuildMesh();
 
     }
 

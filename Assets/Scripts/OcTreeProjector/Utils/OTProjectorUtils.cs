@@ -19,30 +19,6 @@ namespace OcTreeProjector
             return IsOutOfBounds(pos);
         }
 
-        public static Vector3 GetMaxVector(Vector3 v1, Vector3 v2)
-        {
-            Vector3 p = v1;
-            if (v2.x > p.x)
-                p.x = v2.x;
-            if (v2.y > p.y)
-                p.y = v2.y;
-            if (v2.z > p.z)
-                p.z = v2.z;
-            return p;
-        }
-
-        public static Vector3 GetMinVector(Vector3 v1, Vector3 v2)
-        {
-            Vector3 p = v1;
-            if (v2.x < p.x)
-                p.x = v2.x;
-            if (v2.y < p.y)
-                p.y = v2.y;
-            if (v2.z < p.z)
-                p.z = v2.z;
-            return p;
-        }
-
         public static void DrawProjectorGizmos(this OTProjector projector)
         {
             Matrix4x4 mtx = default(Matrix4x4);
@@ -128,20 +104,20 @@ namespace OcTreeProjector
         private static Bounds GetBounds(Vector3 p1, Vector3 p2, Vector3 p3, Vector3 p4, Vector3 p5, Vector3 p6,
             Vector3 p7, Vector3 p8)
         {
-            Vector3 min = OTProjectorUtils.GetMinVector(p1, p2);
-            min = OTProjectorUtils.GetMinVector(min, p3);
-            min = OTProjectorUtils.GetMinVector(min, p4);
-            min = OTProjectorUtils.GetMinVector(min, p5);
-            min = OTProjectorUtils.GetMinVector(min, p6);
-            min = OTProjectorUtils.GetMinVector(min, p7);
-            min = OTProjectorUtils.GetMinVector(min, p8);
-            Vector3 max = OTProjectorUtils.GetMaxVector(p1, p2);
-            max = OTProjectorUtils.GetMaxVector(max, p3);
-            max = OTProjectorUtils.GetMaxVector(max, p4);
-            max = OTProjectorUtils.GetMaxVector(max, p5);
-            max = OTProjectorUtils.GetMaxVector(max, p6);
-            max = OTProjectorUtils.GetMaxVector(max, p7);
-            max = OTProjectorUtils.GetMaxVector(max, p8);
+            Vector3 min = Vector3.Min(p1, p2);
+            min = Vector3.Min(min, p3);
+            min = Vector3.Min(min, p4);
+            min = Vector3.Min(min, p5);
+            min = Vector3.Min(min, p6);
+            min = Vector3.Min(min, p7);
+            min = Vector3.Min(min, p8);
+            Vector3 max = Vector3.Max(p1, p2);
+            max = Vector3.Max(max, p3);
+            max = Vector3.Max(max, p4);
+            max = Vector3.Max(max, p5);
+            max = Vector3.Max(max, p6);
+            max = Vector3.Max(max, p7);
+            max = Vector3.Max(max, p8);
 
             Vector3 si = max - min;
             Vector3 ct = min + si / 2;
